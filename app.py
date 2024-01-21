@@ -5,6 +5,11 @@ from transformers import AutoTokenizer
 import torch.nn.functional as F
 import streamlit as st
 from random import randint
+import tempfile
+import os
+from huggingface_hub import hf_hub_download
+from dotenv import load_dotenv
+
 def main():
     
     st.set_page_config(
@@ -20,7 +25,7 @@ NA='NA'
 MAX_LENGTH=120
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_checkpoint="l3cube-pune/gujarati-bert"
-inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
+# inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 
 
 all_feature_values={
@@ -224,14 +229,36 @@ class PosMorphAnalysisModelWrapper:
         output = self.prepare_output(curr_sample)
         return output
 
+def get_dir_path():
+    temp_dir = tempfile.gettempdir()
+    os.makedirs(temp_dir, exist_ok=True)
+    return temp_dir
+
+@st.cache_resource
+def download_file():
+    load_dotenv()
+    HF_TOKEN = os.getenv("HF_TOKEN")
+    
+    repo_file_name="HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth"
+    temp_dir=get_dir_path()
+    model_filepath=os.path.join(temp_dir,repo_file_name)
+    hf_hub_download(
+        repo_id="om-ashish-soni/research-pos-morph-gujarati-6.0",
+        filename=repo_file_name,
+        local_dir = temp_dir,
+        token=HF_TOKEN
+    )
+    return model_filepath
+
 @st.cache_resource
 def load_tokenizer():
 #   st.write("loading tokenizer......")
   return AutoTokenizer.from_pretrained(model_checkpoint)
 
 @st.cache_resource
-def load_inference_model():
+def load_inference_model(inference_checkpoint_path):
     # st.write("loading inference model......")
+    # print(inference_checkpoint_path)
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
@@ -284,8 +311,12 @@ def is_dark_color(color):
 
 
 
+inference_checkpoint_path=download_file()
+# print(inference_checkpoint_path)
+
+# input()
 tokenizer = load_tokenizer()
-inference_model=load_inference_model()
+inference_model=load_inference_model(inference_checkpoint_path)
 inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
 
 
