@@ -9,12 +9,12 @@ import tempfile
 import os
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
-import pandas as pd
+load_dotenv()
 
 def main():
     
     st.set_page_config(
-        page_title="NLP Gujarati POS Tagging & Morph Analyzer",
+        page_title="NLP Gujarati Morph Analyzer by POS Support",
         page_icon="✨",
         # layout="wide",
     )
@@ -29,62 +29,12 @@ model_checkpoint="l3cube-pune/gujarati-bert"
 # inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 
 
-all_feature_values={
-    'pos':[
-      NA,'DM_DMI', 'CC_CCD', 'PSP', 'PR_PRQ', 'RP_RPD', 'PR_PRP', 'DM_DMQ', 'RB', 'QT_QTO', 'JJ', 'RD_ECH', 'PR_PRF', 'N_NNP', 'N_NN', 'RP_CL', 'V_VM', 'DM_DMD', 'RP_INTF', 'QT_QTC', 'RP_INJ', 'PR_PRC', 'V_VAUX_VNP', 'RD_PUNC', 'PR_PRI', 'PR_PRL', 'DM_DMR', 'CC_CCS_UT', 'RD_RDF', 'N_NST', 'RP_NEG', 'RD_SYM', 'V_VAUX', 'QT_QTF', 'CC_CCS', 'Value'
-    ],
-    'gender':[
-        NA,'MASC','FEM','NEUT'
-    ],
-    'number':[
-        NA,'SG','PL'
-    ],
-    'type':[
-        NA,'LGSPEC02','LGSPEC01','LGSPEC03'
-    ],
-    'person':[
-        NA,'1','2','3'
-    ],
-    'tense':[
-        NA,'PST','FUT'
-        # is present tense is not there?
-    ],
-    'case':[
-        NA,'ERG', 'GEN', 'NOM', 'DAT', 'LOC','ABL'
-    ],
-    'aspect':[
-        NA,'NFIN'
-    ],
-    # what is NFIN
-}
 
-feature_values={
+
+feature_values_for_pos={
     'pos':[
       NA,'DM_DMI', 'CC_CCD', 'PSP', 'PR_PRQ', 'RP_RPD', 'PR_PRP', 'DM_DMQ', 'RB', 'QT_QTO', 'JJ', 'RD_ECH', 'PR_PRF', 'N_NNP', 'N_NN', 'RP_CL', 'V_VM', 'DM_DMD', 'RP_INTF', 'QT_QTC', 'RP_INJ', 'PR_PRC', 'V_VAUX_VNP', 'RD_PUNC', 'PR_PRI', 'PR_PRL', 'DM_DMR', 'CC_CCS_UT', 'RD_RDF', 'N_NST', 'RP_NEG', 'RD_SYM', 'V_VAUX', 'QT_QTF', 'CC_CCS', 'Value'
     ],
-    'gender':[
-        NA,'MASC','FEM','NEUT'
-    ],
-    'number':[
-        NA,'SG','PL'
-    ],
-    'type':[
-        NA,'LGSPEC02','LGSPEC01','LGSPEC03'
-    ],
-    'person':[
-        NA,'1','2','3'
-    ],
-    'tense':[
-        NA,'PST','FUT'
-        # is present tense is not there?
-    ],
-    'case':[
-        NA,'ERG', 'GEN', 'NOM', 'DAT', 'LOC','ABL'
-    ],
-    'aspect':[
-        NA,'NFIN'
-    ],
-    # what is NFIN
 }
 
 BOOTSTRAP_COLORS = [
@@ -98,28 +48,37 @@ BOOTSTRAP_COLORS = [
     "#343A40",
 ]
 
-feature_seq=list(feature_values.keys())
-EXTRA_TOKEN=[-100]*len(feature_seq)
 
-total_number_of_features=0
-feature_value2id={}
-feature_id2value={}
-feature_start_range={}
+# FOR POS
+feature_seq_for_pos=list(feature_values_for_pos.keys())
+EXTRA_TOKEN_for_pos=[-100]*len(feature_seq_for_pos)
 
-start_range=0
-for key,values in feature_values.items():
-  feature_value2id[key]={}
-  feature_start_range[key]=start_range
+total_number_of_features_for_pos=0
+feature_value2id_for_pos={}
+feature_id2value_for_pos={}
+feature_start_range_for_pos={}
+
+start_range_for_pos=0
+for key,values in feature_values_for_pos.items():
+  feature_value2id_for_pos[key]={}
+  feature_start_range_for_pos[key]=start_range_for_pos
   for i,value in enumerate(values):
-    feature_value2id[key][value]=i+start_range
-  feature_id2value[key]={(y-start_range):x for x,y in feature_value2id[key].items()}
-  start_range+=len(values)
-  total_number_of_features+=len(values)
+    feature_value2id_for_pos[key][value]=i+start_range_for_pos
+  feature_id2value_for_pos[key]={(y-start_range_for_pos):x for x,y in feature_value2id_for_pos[key].items()}
+  start_range_for_pos+=len(values)
+  total_number_of_features_for_pos+=len(values)
 
 
-number_of_labels=total_number_of_features
+number_of_labels_for_pos=total_number_of_features_for_pos
+
+# DONE FOR POS
 
 # st.write("doing outer scripts....")
+
+
+
+  
+# FOR POS
 class CustomTokenClassificationModel(nn.Module):
     def __init__(self, bert_model, feature_seq):
         super(CustomTokenClassificationModel, self).__init__()
@@ -128,14 +87,14 @@ class CustomTokenClassificationModel(nn.Module):
         self.module_list = nn.ModuleList()
 
         for key in feature_seq:
-          num_classes = len(feature_values[key])
-          module = nn.Linear(number_of_labels, num_classes)
-          self.module_list.append(module)
+            num_classes = len(feature_values_for_pos[key])
+            module = nn.Linear(number_of_labels_for_pos, num_classes)
+            self.module_list.append(module)
 
     def forward(self, input_ids, attention_mask):
         sequence_output = self.bert_model(
-              input_ids,
-              attention_mask=attention_mask
+            input_ids,
+            attention_mask=attention_mask
         )
 
         # Initialize an empty list to store the logits for each attribute
@@ -148,15 +107,19 @@ class CustomTokenClassificationModel(nn.Module):
 
         return logits_list
 
-class PosMorphAnalysisModelWrapper:
-    def __init__(self, tokenizer, inference_model, feature_seq, feature_id2value, max_length,NA):
+class PosMorphAnalysisModelWrapper_for_pos:
+
+    def __init__(self, tokenizer, inference_checkpoint_path, feature_seq, feature_id2value, max_length,NA):
         self.tokenizer = tokenizer
-        self.inference_model = inference_model
+        # self.inference_model = inference_model
         self.feature_seq = feature_seq
         self.feature_id2value = feature_id2value
         self.max_length = max_length
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.NA = NA
+        self.inference_model=torch.load(inference_checkpoint_path,map_location=self.device)
+        self.inference_model.eval()
+        self.inference_model.to(self.device)
 
     def prepare_mask(self, word_ids):
         mask = []
@@ -230,30 +193,16 @@ class PosMorphAnalysisModelWrapper:
         output = self.prepare_output(curr_sample)
         return output
 
+# DONE FOR POS
+    
 def get_dir_path():
     temp_dir = tempfile.gettempdir()
     os.makedirs(temp_dir, exist_ok=True)
     return temp_dir
 
 @st.cache_resource
-def download_file():
-    load_dotenv()
-    HF_TOKEN = os.getenv("HF_TOKEN")
-    
-    repo_file_name="HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth"
-    temp_dir=get_dir_path()
-    model_filepath=os.path.join(temp_dir,repo_file_name)
-    hf_hub_download(
-        repo_id="om-ashish-soni/research-pos-morph-gujarati-6.0",
-        filename=repo_file_name,
-        local_dir = temp_dir,
-        token=HF_TOKEN
-    )
-    return model_filepath
-
-@st.cache_resource
-def download_file_optimistic(repo_id,repo_file_name):
-    # st.write("downloading model",repo_file_name,".......")
+def download_file(repo_id,repo_file_name):
+    st.write("downloading model",repo_file_name,".......")
     load_dotenv()
     HF_TOKEN = os.getenv("HF_TOKEN")
     
@@ -261,10 +210,9 @@ def download_file_optimistic(repo_id,repo_file_name):
     temp_dir=get_dir_path()
     model_filepath=os.path.join(temp_dir,repo_file_name)
     if os.path.exists(model_filepath):
-        # st.write(f'The file {model_filepath} exists.')
-        pass
+        st.write(f'The file {model_filepath} exists.')
     else:
-        # st.write(f'The file {model_filepath} does not exist.')
+        st.write(f'The file {model_filepath} does not exist.')
         hf_hub_download(
             repo_id=repo_id,
             filename=repo_file_name,
@@ -287,63 +235,21 @@ def load_inference_model(inference_checkpoint_path):
     inference_model.to(device)
     return inference_model
 
-@st.cache_resource
-def load_inference_wrapper_model(_tokenizer,_inference_model):
-#   st.write("loading inference wrapper model......")
-  return PosMorphAnalysisModelWrapper(_tokenizer, _inference_model, feature_seq, feature_id2value, MAX_LENGTH,NA)
-
-
 
 def get_badge_color(index):
    return BOOTSTRAP_COLORS[index%len(BOOTSTRAP_COLORS)]
    
 
-# def display_word_features(word_features):
-#     for word, features in word_features:
-#         st.markdown(
-#             f'<div style="display: flex; align-items: center; margin-bottom: 10px;">'
-#             # f'<h3 style="margin-right: 10px;">{word}</h3>'
-#             f'{generate_single_badge(word,"#FFFFFF")}'
-#             f'{generate_badges(features)}'
-#             f'</div>',
-#             unsafe_allow_html=True,
-#         )
-
 def display_word_features(word_features):
-    output=[]
-    for word,features in word_features:
-        modified_features={}
-        for feature_key in features:
-            feature_value=features[feature_key]
-            modified_feature_key=feature_key if feature_key == 'pos' else ''
-            if modified_feature_key in modified_features:
-                modified_features[modified_feature_key]+='/\n'+feature_value
-            else:
-                modified_features[modified_feature_key]=feature_value
-        pass
-        output.append((word,modified_features))
-    
-    # Extracting all unique feature keys
-    feature_keys = set()
-    for _, features in output:
-        feature_keys.update(features.keys())
-
-    # Creating an empty DataFrame with columns as words
-    df = pd.DataFrame(columns=[word for word, _ in output])
-
-    # Populating the DataFrame with feature values
-    feature_keys=['pos','']
-    for feature_key in feature_keys:
-        feature_values = []
-        for _, features in output:
-            feature_values.append(features.get(feature_key, ""))
-        
-        df_key=feature_key if feature_key == 'pos' else 'morph'
-        df.loc[feature_key] = feature_values
-
-    # Displaying the DataFrame
-    return st.table(df)
-    
+    for word, features in word_features:
+        st.markdown(
+            f'<div style="display: flex; align-items: center; margin-bottom: 10px;">'
+            # f'<h3 style="margin-right: 10px;">{word}</h3>'
+            f'{generate_single_badge(word,"#FFFFFF")}'
+            f'{generate_badges(features)}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 def generate_single_badge(content,color=None):
     if color == None:
@@ -353,6 +259,7 @@ def generate_single_badge(content,color=None):
         f'<span style="background-color: {color}; color: {text_color}; '
         f'padding: 5px; margin-right: 5px; border-radius: 5px;">{content}</span>'
     )
+
 def generate_badges(features):
     badges = ""
     
@@ -370,20 +277,24 @@ def is_dark_color(color):
 
 
 
+print(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
+inference_checkpoint_path_for_pos=download_file(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
 
-inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
 # print(inference_checkpoint_path)
 
 # input()
 tokenizer = load_tokenizer()
-inference_model=load_inference_model(inference_checkpoint_path)
-inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
 
 
+inference_model_wrapper_for_pos=PosMorphAnalysisModelWrapper_for_pos(tokenizer, inference_checkpoint_path_for_pos, feature_seq_for_pos, feature_id2value_for_pos, MAX_LENGTH,NA)
 
-st.title("Gujarati POS Tagging & Morph Analyzer")
+title_pos_morph="Gujarati POS Tagging Analyzer"
+
+
+st.title(title_pos_morph)
 
 # Your main app content goes here
+
 
 
 # st.markdown(
@@ -420,7 +331,7 @@ st.title("Gujarati POS Tagging & Morph Analyzer")
 query = st.text_input("Enter the sentence in Gujarati here....")
 
 if st.button('Query'):
-    word_features=inference_model_wrapper.infer(query)
+    word_features=inference_model_wrapper_for_pos.infer(query)
     display_word_features(word_features)
     
 st.markdown(
