@@ -6,21 +6,22 @@ import torch.nn.functional as F
 import streamlit as st
 from random import randint
 import tempfile
+import pandas as pd
 import os
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 load_dotenv()
 
-def main():
+# def main():
     
-    st.set_page_config(
-        page_title="NLP Gujarati Morph Analyzer by POS Support",
-        page_icon="✨",
-        # layout="wide",
-    )
+#     st.set_page_config(
+#         page_title="NLP Gujarati Morph Analyzer by POS Support",
+#         page_icon="✨",
+#         # layout="wide",
+#     )
     
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 NA='NA'
 MAX_LENGTH=120
@@ -365,7 +366,7 @@ def get_dir_path():
 
 @st.cache_resource
 def download_file(repo_id,repo_file_name):
-    st.write("downloading model",repo_file_name,".......")
+    # st.write("downloading model",repo_file_name,".......")
     load_dotenv()
     HF_TOKEN = os.getenv("HF_TOKEN")
     
@@ -373,9 +374,10 @@ def download_file(repo_id,repo_file_name):
     temp_dir=get_dir_path()
     model_filepath=os.path.join(temp_dir,repo_file_name)
     if os.path.exists(model_filepath):
-        st.write(f'The file {model_filepath} exists.')
+        # st.write(f'The file {model_filepath} exists.')
+        pass
     else:
-        st.write(f'The file {model_filepath} does not exist.')
+        # st.write(f'The file {model_filepath} does not exist.')
         hf_hub_download(
             repo_id=repo_id,
             filename=repo_file_name,
@@ -409,16 +411,52 @@ def get_badge_color(index):
    return BOOTSTRAP_COLORS[index%len(BOOTSTRAP_COLORS)]
    
 
+# def display_word_features(word_features):
+#     for word, features in word_features:
+#         st.markdown(
+#             f'<div style="display: flex; align-items: center; margin-bottom: 10px;">'
+#             # f'<h3 style="margin-right: 10px;">{word}</h3>'
+#             f'{generate_single_badge(word,"#FFFFFF")}'
+#             f'{generate_badges(features)}'
+#             f'</div>',
+#             unsafe_allow_html=True,
+#         )
+
 def display_word_features(word_features):
-    for word, features in word_features:
-        st.markdown(
-            f'<div style="display: flex; align-items: center; margin-bottom: 10px;">'
-            # f'<h3 style="margin-right: 10px;">{word}</h3>'
-            f'{generate_single_badge(word,"#FFFFFF")}'
-            f'{generate_badges(features)}'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+    output=[]
+    for word,features in word_features:
+        modified_features={}
+        for feature_key in features:
+            feature_value=features[feature_key]
+            modified_feature_key=feature_key if feature_key == 'pos' else ''
+            if modified_feature_key in modified_features:
+                modified_features[modified_feature_key]+='/ \n'+feature_value
+            else:
+                modified_features[modified_feature_key]=feature_value
+        pass
+        output.append((word,modified_features))
+    
+    # Extracting all unique feature keys
+    feature_keys = set()
+    for _, features in output:
+        feature_keys.update(features.keys())
+
+    # Creating an empty DataFrame with columns as words
+    df = pd.DataFrame(columns=[word for word, _ in output])
+
+    # Populating the DataFrame with feature values
+    feature_keys=['']
+    for feature_key in feature_keys:
+        feature_values = []
+        for _, features in output:
+            feature_values.append(features.get(feature_key, ""))
+        
+        # df_key=feature_key if feature_key == 'pos' else 'morph'
+        df.loc[feature_key] = feature_values
+
+    # Displaying the DataFrame
+    return st.table(df)
+
 
 def generate_single_badge(content,color=None):
     if color == None:

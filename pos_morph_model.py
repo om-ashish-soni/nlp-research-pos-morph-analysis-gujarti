@@ -11,16 +11,16 @@ from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 import pandas as pd
 
-def main():
+# def main():
     
-    st.set_page_config(
-        page_title="NLP Gujarati POS Tagging & Morph Analyzer",
-        page_icon="✨",
-        # layout="wide",
-    )
+#     st.set_page_config(
+#         page_title="NLP Gujarati POS Tagging & Morph Analyzer",
+#         page_icon="✨",
+#         # layout="wide",
+#     )
     
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
 
 NA='NA'
 MAX_LENGTH=120
@@ -317,7 +317,7 @@ def display_word_features(word_features):
             feature_value=features[feature_key]
             modified_feature_key=feature_key if feature_key == 'pos' else ''
             if modified_feature_key in modified_features:
-                modified_features[modified_feature_key]+='/\n'+feature_value
+                modified_features[modified_feature_key]+='/ \n'+feature_value
             else:
                 modified_features[modified_feature_key]=feature_value
         pass
