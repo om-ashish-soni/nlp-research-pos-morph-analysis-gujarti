@@ -10,23 +10,21 @@ import os
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 import pandas as pd
+import traceback
 
-# def main():
+def main():
+    st.set_page_config(
+        page_title="NLP Gujarati POS Tagging & Morph Analyzer",
+        page_icon="✨",   
+    )
     
-#     st.set_page_config(
-#         page_title="NLP Gujarati POS Tagging & Morph Analyzer",
-#         page_icon="✨",
-#         # layout="wide",
-#     )
-    
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 NA='NA'
 MAX_LENGTH=120
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model_checkpoint="l3cube-pune/gujarati-bert"
-# inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 
 
 all_feature_values={
@@ -87,6 +85,65 @@ feature_values={
     # what is NFIN
 }
 
+feature_meanings = {
+    'NA': 'Not Available',
+    'DM_DMI': 'Demonstrative',
+    'CC_CCD': 'Coordinating Conjunction',
+    'PSP': 'Postposition',
+    'PR_PRQ': 'Pronoun - Interrogative',
+    'RP_RPD': 'Particle',
+    'PR_PRP': 'Personal Pronoun',
+    'DM_DMQ': 'Demonstrative - Interrogative',
+    'RB': 'Adverb',
+    'QT_QTO': 'Quantifier',
+    'JJ': 'Adjective',
+    'RD_ECH': 'Echo Word',
+    'PR_PRF': 'Pronoun - Reflexive',
+    'N_NNP': 'Noun - Proper Singular',
+    'N_NN': 'Noun - Common',
+    'RP_CL': 'Clitic',
+    'V_VM': 'Verb - Main',
+    'DM_DMD': 'Demonstrative - Determiner',
+    'RP_INTF': 'Intensifier',
+    'QT_QTC': 'Cardinal Numeral',
+    'RP_INJ': 'Interjection',
+    'PR_PRC': 'Pronoun - Relative',
+    'V_VAUX_VNP': 'Verb - Auxiliary (Negative Polarity)',
+    'RD_PUNC': 'Punctuation',
+    'PR_PRI': 'Pronoun - Indefinite',
+    'PR_PRL': 'Pronoun - Relative Locative',
+    'DM_DMR': 'Demonstrative - Relative',
+    'CC_CCS_UT': 'Coordinating Conjunction - Subordinating',
+    'RD_RDF': 'Reduplicator',
+    'N_NST': 'Noun - Honorific',
+    'RP_NEG': 'Negation',
+    'RD_SYM': 'Symbol',
+    'V_VAUX': 'Verb - Auxiliary',
+    'QT_QTF': 'Quantifier - Fraction',
+    'CC_CCS': 'Coordinating Conjunction - Subordinating',
+    'Value': 'Value',
+    'MASC': 'Masculine',
+    'FEM': 'Feminine',
+    'NEUT': 'Neutral',
+    'SG': 'Singular',
+    'PL': 'Plural',
+    'LGSPEC02': 'Language Specific 02',
+    'LGSPEC01': 'Language Specific 01',
+    'LGSPEC03': 'Language Specific 03',
+    '1': 'First Person',
+    '2': 'Second Person',
+    '3': 'Third Person',
+    'PST': 'Past Tense',
+    'FUT': 'Future Tense',
+    'ERG': 'Ergative',
+    'GEN': 'Genitive',
+    'NOM': 'Nominative',
+    'DAT': 'Dative',
+    'LOC': 'Locative',
+    'ABL': 'Ablative',
+    'NFIN': 'Non-Finite'
+}
+
 BOOTSTRAP_COLORS = [
     "#007BFF",
     "#6C757D",
@@ -94,7 +151,6 @@ BOOTSTRAP_COLORS = [
     "#DC3545",
     "#FFC107",
     "#17A2B8",
-    # "#F8F9FA",
     "#343A40",
 ]
 
@@ -119,7 +175,6 @@ for key,values in feature_values.items():
 
 number_of_labels=total_number_of_features
 
-# st.write("doing outer scripts....")
 class CustomTokenClassificationModel(nn.Module):
     def __init__(self, bert_model, feature_seq):
         super(CustomTokenClassificationModel, self).__init__()
@@ -192,17 +247,32 @@ class PosMorphAnalysisModelWrapper:
         return sample
 
     def prepare_output(self, sample):
-        tokens = sample['tokens']
-        output = []
+        try:
+            tokens = sample['tokens']
+            output = []
 
-        for i, token in enumerate(tokens):
-          features = {}
-          for feat in self.feature_seq:
-            feat_val = sample[feat][i]
-            if feat_val != self.NA:
-              features[feat] = feat_val
-          output.append((token, features))
-        return output
+            for i, token in enumerate(tokens):
+                features = {}
+                for feat in self.feature_seq:
+                    if(i>=len(sample[feat])):
+                        continue
+                    feat_val = sample[feat][i]
+                    print(feat,feat_val)
+                    if feat_val != self.NA:
+                        features[feat] = feat_val
+                # print("features",features)
+                output.append((token, features))
+            print(output)
+            return output
+        except Exception as e:
+            print("Error while prepare output ", str(e))
+            traceback.print_exc()
+
+    def get_value(self,key):
+        if key not in self.feature_id2value:
+            return 'NOT FOUND'
+        return self.feature_id2value[key]
+        pass
 
     def infer(self, sentence):
         batch = self.tokenize_sentence(sentence)
@@ -212,6 +282,8 @@ class PosMorphAnalysisModelWrapper:
         mask = torch.tensor([batch['mask']]).to(self.device)
 
         logits_list = self.inference_model(input_ids, attention_mask=attention_mask)
+
+        print("sentence",sentence)
 
         curr_sample = {
             "tokens": batch["tokens"],
@@ -223,10 +295,16 @@ class PosMorphAnalysisModelWrapper:
             valid_logits = logits[curr_mask]
             probabilities = F.softmax(valid_logits, dim=-1)
             valid_predicted_labels = torch.argmax(probabilities, dim=-1)
-            curr_id2value_map = self.feature_id2value[key]
+            
+            print("key",key)
+            print("valid_predicted_labels : ",valid_predicted_labels.tolist())
+            curr_id2value_map = self.get_value(key)
             curr_sample[key] = [curr_id2value_map[x] for x in valid_predicted_labels.tolist()]
+            for x in valid_predicted_labels.tolist():
+                print("x",curr_id2value_map[x])
 
 
+        print("curr_sample",curr_sample)
         output = self.prepare_output(curr_sample)
         return output
 
@@ -253,18 +331,14 @@ def download_file():
 
 @st.cache_resource
 def download_file_optimistic(repo_id,repo_file_name):
-    # st.write("downloading model",repo_file_name,".......")
     load_dotenv()
     HF_TOKEN = os.getenv("HF_TOKEN")
     
-    # repo_file_name="HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth"
     temp_dir=get_dir_path()
     model_filepath=os.path.join(temp_dir,repo_file_name)
     if os.path.exists(model_filepath):
-        # st.write(f'The file {model_filepath} exists.')
         pass
     else:
-        # st.write(f'The file {model_filepath} does not exist.')
         hf_hub_download(
             repo_id=repo_id,
             filename=repo_file_name,
@@ -275,13 +349,10 @@ def download_file_optimistic(repo_id,repo_file_name):
 
 @st.cache_resource
 def load_tokenizer():
-#   st.write("loading tokenizer......")
   return AutoTokenizer.from_pretrained(model_checkpoint)
 
 @st.cache_resource
 def load_inference_model(inference_checkpoint_path):
-    # st.write("loading inference model......")
-    # print(inference_checkpoint_path)
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
@@ -289,60 +360,59 @@ def load_inference_model(inference_checkpoint_path):
 
 @st.cache_resource
 def load_inference_wrapper_model(_tokenizer,_inference_model):
-#   st.write("loading inference wrapper model......")
   return PosMorphAnalysisModelWrapper(_tokenizer, _inference_model, feature_seq, feature_id2value, MAX_LENGTH,NA)
-
-
 
 def get_badge_color(index):
    return BOOTSTRAP_COLORS[index%len(BOOTSTRAP_COLORS)]
    
-
-# def display_word_features(word_features):
-#     for word, features in word_features:
-#         st.markdown(
-#             f'<div style="display: flex; align-items: center; margin-bottom: 10px;">'
-#             # f'<h3 style="margin-right: 10px;">{word}</h3>'
-#             f'{generate_single_badge(word,"#FFFFFF")}'
-#             f'{generate_badges(features)}'
-#             f'</div>',
-#             unsafe_allow_html=True,
-#         )
-
 def display_word_features(word_features):
-    output=[]
-    for word,features in word_features:
-        modified_features={}
-        for feature_key in features:
-            feature_value=features[feature_key]
-            modified_feature_key=feature_key if feature_key == 'pos' else ''
-            if modified_feature_key in modified_features:
-                modified_features[modified_feature_key]+='/ \n'+feature_value
-            else:
-                modified_features[modified_feature_key]=feature_value
-        pass
-        output.append((word,modified_features))
-    
-    # Extracting all unique feature keys
-    feature_keys = set()
-    for _, features in output:
-        feature_keys.update(features.keys())
-
-    # Creating an empty DataFrame with columns as words
-    df = pd.DataFrame(columns=[word for word, _ in output])
-
-    # Populating the DataFrame with feature values
-    feature_keys=['pos','']
-    for feature_key in feature_keys:
-        feature_values = []
-        for _, features in output:
-            feature_values.append(features.get(feature_key, ""))
+    df = pd.DataFrame()
+    try:
+        output=[]
+        for word,features in word_features:
+            modified_features={}
+            for feature_key in features:
+                feature_value=str(features[feature_key]) if feature_key=='pos' else str(feature_key)+' : '+str(features[feature_key])
+                
+                modified_feature_key=feature_key if feature_key == 'pos' else ''
+                if modified_feature_key in modified_features:
+                    modified_features[modified_feature_key]+='<br/>'+feature_value
+                else:
+                    modified_features[modified_feature_key]=feature_value
+            pass
+            output.append((word,modified_features))
         
-        df_key=feature_key if feature_key == 'pos' else 'morph'
-        df.loc[feature_key] = feature_values
+        # Extracting all unique feature keys
+        feature_keys = set()
+        for _, features in output:
+            feature_keys.update(features.keys())
 
+        # Creating an empty DataFrame with columns as words
+        df = pd.DataFrame(columns=['Feature']+[word for word, _ in output])
+
+        # Populating the DataFrame with feature values
+        feature_keys=['pos','']
+        for feature_key in feature_keys:
+            feature_values = [feature_key]
+            for _, features in output:
+                feature_values.append(features.get(feature_key, ""))
+            
+            # df_key=feature_key if feature_key == 'pos' else 'morph'
+            df.loc[feature_key] = feature_values
+        
+        print(df.columns)
+
+        # Convert DataFrame to HTML table
+        df_html = df.to_html(index=False, escape=False)
+
+        # Display the HTML table
+        st.write(df_html, unsafe_allow_html=True)
+
+    except Exception as e:
+        print("An error occurred:", e)
+        traceback.print_exc()
     # Displaying the DataFrame
-    return st.table(df)
+    
     
 
 def generate_single_badge(content,color=None):
@@ -353,12 +423,11 @@ def generate_single_badge(content,color=None):
         f'<span style="background-color: {color}; color: {text_color}; '
         f'padding: 5px; margin-right: 5px; border-radius: 5px;">{content}</span>'
     )
+
 def generate_badges(features):
     badges = ""
     
     for feature, value in features.items():
-        
-        # color = BOOTSTRAP_COLORS.get(feature.lower(), "#6C757D")  # Default to secondary color
         badges+=generate_single_badge(f'{feature}: {value}')
         
     return badges

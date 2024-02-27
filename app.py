@@ -15,8 +15,8 @@ if __name__ == "__main__":
 pages={
     "Home":"home",
     "GUJ POS MORPH":"pos_morph_model", 
-    "GUJ ONLY MORPH":"morph_by_pos_support", 
-    "GUJ ONLY POS":"only_pos_model"
+    # "GUJ ONLY MORPH":"morph_by_pos_support", 
+    # "GUJ ONLY POS":"only_pos_model"
 }
 
 # Render the navigation links
@@ -42,8 +42,8 @@ if page == "Home":
     )
     st.subheader("Models Available:")
     st.markdown("- " + styled_text("GUJ POS MORPH:", color="#28a745") + " Model for predicting POS and morphological features.",unsafe_allow_html=True )
-    st.markdown("- " + styled_text("GUJ ONLY MORPH:", color="#dc3545") + " Model for predicting morphological features with POS support.",unsafe_allow_html=True )
-    st.markdown("- " + styled_text("GUJ ONLY POS:", color="#007bff") + " Model for predicting only POS of Gujarati words.",unsafe_allow_html=True )
+    # st.markdown("- " + styled_text("GUJ ONLY MORPH:", color="#dc3545") + " Model for predicting morphological features with POS support.",unsafe_allow_html=True )
+    # st.markdown("- " + styled_text("GUJ ONLY POS:", color="#007bff") + " Model for predicting only POS of Gujarati words.",unsafe_allow_html=True )
 
 else:
     # Import and render the selected file
