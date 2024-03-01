@@ -257,12 +257,12 @@ class PosMorphAnalysisModelWrapper:
                     if(i>=len(sample[feat])):
                         continue
                     feat_val = sample[feat][i]
-                    print(feat,feat_val)
+                    # print(feat,feat_val)
                     if feat_val != self.NA:
                         features[feat] = feat_val
                 # print("features",features)
                 output.append((token, features))
-            print(output)
+            # print(output)
             return output
         except Exception as e:
             print("Error while prepare output ", str(e))
@@ -283,7 +283,7 @@ class PosMorphAnalysisModelWrapper:
 
         logits_list = self.inference_model(input_ids, attention_mask=attention_mask)
 
-        print("sentence",sentence)
+        # print("sentence",sentence)
 
         curr_sample = {
             "tokens": batch["tokens"],
@@ -296,15 +296,15 @@ class PosMorphAnalysisModelWrapper:
             probabilities = F.softmax(valid_logits, dim=-1)
             valid_predicted_labels = torch.argmax(probabilities, dim=-1)
             
-            print("key",key)
-            print("valid_predicted_labels : ",valid_predicted_labels.tolist())
+            # print("key",key)
+            # print("valid_predicted_labels : ",valid_predicted_labels.tolist())
             curr_id2value_map = self.get_value(key)
             curr_sample[key] = [curr_id2value_map[x] for x in valid_predicted_labels.tolist()]
-            for x in valid_predicted_labels.tolist():
-                print("x",curr_id2value_map[x])
+            # for x in valid_predicted_labels.tolist():
+            #     print("x",curr_id2value_map[x])
 
 
-        print("curr_sample",curr_sample)
+        # print("curr_sample",curr_sample)
         output = self.prepare_output(curr_sample)
         return output
 
@@ -365,13 +365,41 @@ def load_inference_wrapper_model(_tokenizer,_inference_model):
 def get_badge_color(index):
    return BOOTSTRAP_COLORS[index%len(BOOTSTRAP_COLORS)]
    
+def display_feature_value_meanings(output_feature_values):
+    
+    
+    df = pd.DataFrame(columns=["Feature Value", "Meaning"])
+    row_index=0
+    for value in output_feature_values:
+        if value in feature_meanings:
+            df.loc[row_index]=[value,feature_meanings[value]]
+        row_index+=1
+        pass
+    
+    # Add horizontal rule
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    st.markdown("### Feature Value Definitions:")
+
+    # Convert DataFrame to HTML table
+    df_html = df.to_html(index=False, escape=False)
+
+    # Display the HTML table
+    st.write(df_html, unsafe_allow_html=True)
+
+    
+
 def display_word_features(word_features):
     df = pd.DataFrame()
+    output_feature_values_set={}
+
     try:
         output=[]
         for word,features in word_features:
             modified_features={}
             for feature_key in features:
+                output_feature_values_set[features[feature_key]]=''
+
                 feature_value=str(features[feature_key]) if feature_key=='pos' else str(feature_key)+' : '+str(features[feature_key])
                 
                 modified_feature_key=feature_key if feature_key == 'pos' else ''
@@ -400,13 +428,15 @@ def display_word_features(word_features):
             # df_key=feature_key if feature_key == 'pos' else 'morph'
             df.loc[feature_key] = feature_values
         
-        print(df.columns)
+        # print(df.columns)
 
         # Convert DataFrame to HTML table
         df_html = df.to_html(index=False, escape=False)
 
         # Display the HTML table
         st.write(df_html, unsafe_allow_html=True)
+
+        display_feature_value_meanings(output_feature_values_set.keys())
 
     except Exception as e:
         print("An error occurred:", e)
