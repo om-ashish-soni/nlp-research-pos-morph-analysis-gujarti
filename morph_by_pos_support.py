@@ -1,3 +1,4 @@
+import traceback
 import torch.nn as nn
 import numpy as np
 import torch
@@ -12,16 +13,16 @@ from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 load_dotenv()
 
-# def main():
+def main():
     
-#     st.set_page_config(
-#         page_title="NLP Gujarati Morph Analyzer by POS Support",
-#         page_icon="✨",
-#         # layout="wide",
-#     )
+    st.set_page_config(
+        page_title="NLP Gujarati Morph Analyzer by POS Support",
+        page_icon="✨",
+        # layout="wide",
+    )
     
-# if __name__ == "__main__":
-#     main()
+if __name__ == "__main__":
+    main()
 
 NA='NA'
 MAX_LENGTH=120
@@ -65,6 +66,66 @@ feature_values_for_pos={
       NA,'DM_DMI', 'CC_CCD', 'PSP', 'PR_PRQ', 'RP_RPD', 'PR_PRP', 'DM_DMQ', 'RB', 'QT_QTO', 'JJ', 'RD_ECH', 'PR_PRF', 'N_NNP', 'N_NN', 'RP_CL', 'V_VM', 'DM_DMD', 'RP_INTF', 'QT_QTC', 'RP_INJ', 'PR_PRC', 'V_VAUX_VNP', 'RD_PUNC', 'PR_PRI', 'PR_PRL', 'DM_DMR', 'CC_CCS_UT', 'RD_RDF', 'N_NST', 'RP_NEG', 'RD_SYM', 'V_VAUX', 'QT_QTF', 'CC_CCS', 'Value'
     ],
 }
+
+feature_meanings = {
+    'NA': 'Not Available',
+    'DM_DMI': 'Demonstrative',
+    'CC_CCD': 'Coordinating Conjunction',
+    'PSP': 'Postposition',
+    'PR_PRQ': 'Pronoun - Interrogative',
+    'RP_RPD': 'Particle',
+    'PR_PRP': 'Personal Pronoun',
+    'DM_DMQ': 'Demonstrative - Interrogative',
+    'RB': 'Adverb',
+    'QT_QTO': 'Quantifier',
+    'JJ': 'Adjective',
+    'RD_ECH': 'Echo Word',
+    'PR_PRF': 'Pronoun - Reflexive',
+    'N_NNP': 'Noun - Proper Singular',
+    'N_NN': 'Noun - Common',
+    'RP_CL': 'Clitic',
+    'V_VM': 'Verb - Main',
+    'DM_DMD': 'Demonstrative - Determiner',
+    'RP_INTF': 'Intensifier',
+    'QT_QTC': 'Cardinal Numeral',
+    'RP_INJ': 'Interjection',
+    'PR_PRC': 'Pronoun - Relative',
+    'V_VAUX_VNP': 'Verb - Auxiliary (Negative Polarity)',
+    'RD_PUNC': 'Punctuation',
+    'PR_PRI': 'Pronoun - Indefinite',
+    'PR_PRL': 'Pronoun - Relative Locative',
+    'DM_DMR': 'Demonstrative - Relative',
+    'CC_CCS_UT': 'Coordinating Conjunction - Subordinating',
+    'RD_RDF': 'Reduplicator',
+    'N_NST': 'Noun - Honorific',
+    'RP_NEG': 'Negation',
+    'RD_SYM': 'Symbol',
+    'V_VAUX': 'Verb - Auxiliary',
+    'QT_QTF': 'Quantifier - Fraction',
+    'CC_CCS': 'Coordinating Conjunction - Subordinating',
+    'Value': 'Value',
+    'MASC': 'Masculine',
+    'FEM': 'Feminine',
+    'NEUT': 'Neutral',
+    'SG': 'Singular',
+    'PL': 'Plural',
+    'LGSPEC02': 'Language Specific 02',
+    'LGSPEC01': 'Language Specific 01',
+    'LGSPEC03': 'Language Specific 03',
+    '1': 'First Person',
+    '2': 'Second Person',
+    '3': 'Third Person',
+    'PST': 'Past Tense',
+    'FUT': 'Future Tense',
+    'ERG': 'Ergative',
+    'GEN': 'Genitive',
+    'NOM': 'Nominative',
+    'DAT': 'Dative',
+    'LOC': 'Locative',
+    'ABL': 'Ablative',
+    'NFIN': 'Non-Finite'
+}
+
 
 BOOTSTRAP_COLORS = [
     "#007BFF",
@@ -422,41 +483,118 @@ def get_badge_color(index):
 #             unsafe_allow_html=True,
 #         )
 
-def display_word_features(word_features):
-    output=[]
-    for word,features in word_features:
-        modified_features={}
-        for feature_key in features:
-            feature_value=features[feature_key]
-            modified_feature_key=feature_key if feature_key == 'pos' else ''
-            if modified_feature_key in modified_features:
-                modified_features[modified_feature_key]+='/ \n'+feature_value
-            else:
-                modified_features[modified_feature_key]=feature_value
-        pass
-        output.append((word,modified_features))
+# def display_word_features(word_features):
+#     output=[]
+#     for word,features in word_features:
+#         modified_features={}
+#         for feature_key in features:
+#             feature_value=features[feature_key]
+#             modified_feature_key=feature_key if feature_key == 'pos' else ''
+#             if modified_feature_key in modified_features:
+#                 modified_features[modified_feature_key]+='/ \n'+feature_value
+#             else:
+#                 modified_features[modified_feature_key]=feature_value
+#         pass
+#         output.append((word,modified_features))
     
-    # Extracting all unique feature keys
-    feature_keys = set()
-    for _, features in output:
-        feature_keys.update(features.keys())
+#     # Extracting all unique feature keys
+#     feature_keys = set()
+#     for _, features in output:
+#         feature_keys.update(features.keys())
 
-    # Creating an empty DataFrame with columns as words
-    df = pd.DataFrame(columns=[word for word, _ in output])
+#     # Creating an empty DataFrame with columns as words
+#     df = pd.DataFrame(columns=[word for word, _ in output])
 
-    # Populating the DataFrame with feature values
-    feature_keys=['']
-    for feature_key in feature_keys:
-        feature_values = []
-        for _, features in output:
-            feature_values.append(features.get(feature_key, ""))
+#     # Populating the DataFrame with feature values
+#     feature_keys=['']
+#     for feature_key in feature_keys:
+#         feature_values = []
+#         for _, features in output:
+#             feature_values.append(features.get(feature_key, ""))
         
-        # df_key=feature_key if feature_key == 'pos' else 'morph'
-        df.loc[feature_key] = feature_values
+#         # df_key=feature_key if feature_key == 'pos' else 'morph'
+#         df.loc[feature_key] = feature_values
 
+#     # Displaying the DataFrame
+#     return st.table(df)
+
+def display_feature_value_meanings(output_feature_values):
+    
+    
+    df = pd.DataFrame(columns=["Feature Value", "Meaning"])
+    row_index=0
+    for value in output_feature_values:
+        if value in feature_meanings:
+            df.loc[row_index]=[value,feature_meanings[value]]
+        row_index+=1
+        pass
+    
+    # Add horizontal rule
+    st.markdown("<hr>", unsafe_allow_html=True)
+
+    st.markdown("### Feature Value Definitions:")
+
+    # Convert DataFrame to HTML table
+    df_html = df.to_html(index=False, escape=False)
+
+    # Display the HTML table
+    st.write(df_html, unsafe_allow_html=True)
+
+    
+
+def display_word_features(word_features):
+    df = pd.DataFrame()
+    output_feature_values_set={}
+
+    try:
+        output=[]
+        for word,features in word_features:
+            modified_features={}
+            for feature_key in features:
+                output_feature_values_set[features[feature_key]]=''
+
+                feature_value=str(features[feature_key]) if feature_key=='pos' else str(feature_key)+' : '+str(features[feature_key])
+                
+                modified_feature_key=feature_key if feature_key == 'pos' else ''
+                if modified_feature_key in modified_features:
+                    modified_features[modified_feature_key]+='<br/>'+feature_value
+                else:
+                    modified_features[modified_feature_key]=feature_value
+            pass
+            output.append((word,modified_features))
+        
+        # Extracting all unique feature keys
+        feature_keys = set()
+        for _, features in output:
+            feature_keys.update(features.keys())
+
+        # Creating an empty DataFrame with columns as words
+        df = pd.DataFrame(columns=['Feature']+[word for word, _ in output])
+
+        # Populating the DataFrame with feature values
+        feature_keys=['morph']
+        for feature_key in feature_keys:
+            feature_values = [feature_key]
+            for _, features in output:
+                feature_values.append(features.get(feature_key, ""))
+            
+            # df_key=feature_key if feature_key == 'pos' else 'morph'
+            df.loc[feature_key] = feature_values
+        
+        # print(df.columns)
+
+        # Convert DataFrame to HTML table
+        df_html = df.to_html(index=False, escape=False)
+
+        # Display the HTML table
+        st.write(df_html, unsafe_allow_html=True)
+
+        display_feature_value_meanings(output_feature_values_set.keys())
+
+    except Exception as e:
+        print("An error occurred:", e)
+        traceback.print_exc()
     # Displaying the DataFrame
-    return st.table(df)
-
 
 def generate_single_badge(content,color=None):
     if color == None:
