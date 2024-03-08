@@ -2,3 +2,6 @@ myenv
 models
 # .env
 nlp_research
+__pycache__
+.devcontainer
+.venv

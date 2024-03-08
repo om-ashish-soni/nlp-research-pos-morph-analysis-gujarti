@@ -434,11 +434,12 @@ def download_file(repo_id,repo_file_name):
     # repo_file_name="HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth"
     temp_dir=get_dir_path()
     model_filepath=os.path.join(temp_dir,repo_file_name)
+    print("model filepath",model_filepath)
     if os.path.exists(model_filepath):
-        # st.write(f'The file {model_filepath} exists.')
+        st.write(f'The file {model_filepath} exists.')
         pass
     else:
-        # st.write(f'The file {model_filepath} does not exist.')
+        st.write(f'The file {model_filepath} does not exist.')
         hf_hub_download(
             repo_id=repo_id,
             filename=repo_file_name,
@@ -572,7 +573,7 @@ def display_word_features(word_features):
         df = pd.DataFrame(columns=['Feature']+[word for word, _ in output])
 
         # Populating the DataFrame with feature values
-        feature_keys=['morph']
+        feature_keys=['']
         for feature_key in feature_keys:
             feature_values = [feature_key]
             for _, features in output:
@@ -620,16 +621,19 @@ def is_dark_color(color):
     brightness = (r * 299 + g * 587 + b * 114) / 1000
     return brightness < 128
 
-
-print(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
+print("going to download")
+# print(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
 inference_checkpoint_path_for_morph=download_file(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
-print(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
-inference_checkpoint_path_for_pos=download_file(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
+print("downloaded : ",inference_checkpoint_path_for_morph)
+# print(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
+# inference_checkpoint_path_for_pos=download_file(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
 
 # print(inference_checkpoint_path)
 
 # input()
+print("Starting loading tokenizer")
 tokenizer = load_tokenizer()
+print("done loading tokenizer")
 
 # CustomTokenClassificationModel=CustomTokenClassificationModel_for_morph
 inference_model_wrapper_for_morph=PosMorphAnalysisModelWrapper_for_morph(tokenizer, inference_checkpoint_path_for_morph, feature_seq_for_morph, feature_id2value_for_morph, MAX_LENGTH,NA)
