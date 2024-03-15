@@ -5,3 +5,6 @@ nlp_research
 __pycache__
 .devcontainer
 .venv
+.myenv
+old_requirements.txt
+try.py

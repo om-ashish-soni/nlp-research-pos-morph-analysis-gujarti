@@ -2,11 +2,12 @@ import streamlit as st
 
 def main():
     
-    st.set_page_config(
-        page_title="NLP Gujarati POS Tagging & Morph Analyzer",
-        page_icon="✨",
+    # st.set_page_config(
+    #     page_title="NLP Gujarati POS Tagging & Morph Analyzer",
+    #     page_icon="✨",
         
-    )
+    # )
+    pass
     
     
 if __name__ == "__main__":
@@ -46,7 +47,8 @@ if page == "Home":
     # st.markdown("- " + styled_text("GUJ ONLY POS:", color="#007bff") + " Model for predicting only POS of Gujarati words.",unsafe_allow_html=True )
 
 else:
+    print("will do something")
     # Import and render the selected file
-    file_path = pages[page] + ".py"
-    with open(file_path, "r", encoding="utf-8") as f:
-        exec(f.read())
+    # file_path = pages[page] + ".py"
+    # with open(file_path, "r", encoding="utf-8") as f:
+    #     exec(f.read())

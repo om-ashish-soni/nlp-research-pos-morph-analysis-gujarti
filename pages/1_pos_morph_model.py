@@ -18,6 +18,7 @@ def main():
         page_icon="✨",   
     )
     
+    
 if __name__ == "__main__":
     main()
 
@@ -56,7 +57,7 @@ all_feature_values={
     # what is NFIN
 }
 
-feature_values={
+feature_values_pos_morph={
     'pos':[
       NA,'DM_DMI', 'CC_CCD', 'PSP', 'PR_PRQ', 'RP_RPD', 'PR_PRP', 'DM_DMQ', 'RB', 'QT_QTO', 'JJ', 'RD_ECH', 'PR_PRF', 'N_NNP', 'N_NN', 'RP_CL', 'V_VM', 'DM_DMD', 'RP_INTF', 'QT_QTC', 'RP_INJ', 'PR_PRC', 'V_VAUX_VNP', 'RD_PUNC', 'PR_PRI', 'PR_PRL', 'DM_DMR', 'CC_CCS_UT', 'RD_RDF', 'N_NST', 'RP_NEG', 'RD_SYM', 'V_VAUX', 'QT_QTF', 'CC_CCS', 'Value'
     ],
@@ -144,47 +145,37 @@ feature_meanings = {
     'NFIN': 'Non-Finite'
 }
 
-BOOTSTRAP_COLORS = [
-    "#007BFF",
-    "#6C757D",
-    "#28A745",
-    "#DC3545",
-    "#FFC107",
-    "#17A2B8",
-    "#343A40",
-]
+feature_seq_pos_morph=list(feature_values_pos_morph.keys())
 
-feature_seq=list(feature_values.keys())
-EXTRA_TOKEN=[-100]*len(feature_seq)
 
-total_number_of_features=0
-feature_value2id={}
-feature_id2value={}
+total_number_of_features_pos_morph=0
+feature_value2id_pos_morph={}
+feature_id2value_pos_morph={}
 feature_start_range={}
 
 start_range=0
-for key,values in feature_values.items():
-  feature_value2id[key]={}
+for key,values in feature_values_pos_morph.items():
+  feature_value2id_pos_morph[key]={}
   feature_start_range[key]=start_range
   for i,value in enumerate(values):
-    feature_value2id[key][value]=i+start_range
-  feature_id2value[key]={(y-start_range):x for x,y in feature_value2id[key].items()}
+    feature_value2id_pos_morph[key][value]=i+start_range
+  feature_id2value_pos_morph[key]={(y-start_range):x for x,y in feature_value2id_pos_morph[key].items()}
   start_range+=len(values)
-  total_number_of_features+=len(values)
+  total_number_of_features_pos_morph+=len(values)
 
 
-number_of_labels=total_number_of_features
+number_of_labels_pos_morph=total_number_of_features_pos_morph
 
 class CustomTokenClassificationModel(nn.Module):
-    def __init__(self, bert_model, feature_seq):
+    def __init__(self, bert_model, feature_seq_pos_morph):
         super(CustomTokenClassificationModel, self).__init__()
         self.bert_model = bert_model
 
         self.module_list = nn.ModuleList()
 
-        for key in feature_seq:
-          num_classes = len(feature_values[key])
-          module = nn.Linear(number_of_labels, num_classes)
+        for key in feature_seq_pos_morph:
+          num_classes = len(feature_values_pos_morph[key])
+          module = nn.Linear(number_of_labels_pos_morph, num_classes)
           self.module_list.append(module)
 
     def forward(self, input_ids, attention_mask):
@@ -204,11 +195,11 @@ class CustomTokenClassificationModel(nn.Module):
         return logits_list
 
 class PosMorphAnalysisModelWrapper:
-    def __init__(self, tokenizer, inference_model, feature_seq, feature_id2value, max_length,NA):
+    def __init__(self, tokenizer, inference_model, feature_seq_pos_morph, feature_id2value_pos_morph, max_length,NA):
         self.tokenizer = tokenizer
         self.inference_model = inference_model
-        self.feature_seq = feature_seq
-        self.feature_id2value = feature_id2value
+        self.feature_seq_pos_morph = feature_seq_pos_morph
+        self.feature_id2value_pos_morph = feature_id2value_pos_morph
         self.max_length = max_length
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.NA = NA
@@ -253,7 +244,7 @@ class PosMorphAnalysisModelWrapper:
 
             for i, token in enumerate(tokens):
                 features = {}
-                for feat in self.feature_seq:
+                for feat in self.feature_seq_pos_morph:
                     if(i>=len(sample[feat])):
                         continue
                     feat_val = sample[feat][i]
@@ -269,9 +260,9 @@ class PosMorphAnalysisModelWrapper:
             traceback.print_exc()
 
     def get_value(self,key):
-        if key not in self.feature_id2value:
+        if key not in self.feature_id2value_pos_morph:
             return 'NOT FOUND'
-        return self.feature_id2value[key]
+        return self.feature_id2value_pos_morph[key]
         pass
 
     def infer(self, sentence):
@@ -290,7 +281,7 @@ class PosMorphAnalysisModelWrapper:
         }
 
         for i, logits in enumerate(logits_list):
-            key = self.feature_seq[i]
+            key = self.feature_seq_pos_morph[i]
             curr_mask = (mask != 0)
             valid_logits = logits[curr_mask]
             probabilities = F.softmax(valid_logits, dim=-1)
@@ -349,25 +340,26 @@ def download_file_optimistic(repo_id,repo_file_name):
 
 @st.cache_resource
 def load_tokenizer():
+  print("loading tokenizer ...................")
   return AutoTokenizer.from_pretrained(model_checkpoint)
+
 
 @st.cache_resource
 def load_inference_model(inference_checkpoint_path):
+    print("loading inference model ...................")
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
     return inference_model
 
+
 @st.cache_resource
 def load_inference_wrapper_model(_tokenizer,_inference_model):
-  return PosMorphAnalysisModelWrapper(_tokenizer, _inference_model, feature_seq, feature_id2value, MAX_LENGTH,NA)
+  print("loading inference wrapper model ...................")
+  return PosMorphAnalysisModelWrapper(_tokenizer, _inference_model, feature_seq_pos_morph, feature_id2value_pos_morph, MAX_LENGTH,NA)
 
-def get_badge_color(index):
-   return BOOTSTRAP_COLORS[index%len(BOOTSTRAP_COLORS)]
-   
+
 def display_feature_value_meanings(output_feature_values):
-    
-    
     df = pd.DataFrame(columns=["Feature Value", "Meaning"])
     row_index=0
     for value in output_feature_values:
@@ -386,10 +378,9 @@ def display_feature_value_meanings(output_feature_values):
 
     # Display the HTML table
     st.write(df_html, unsafe_allow_html=True)
-
     
 
-def display_word_features(word_features):
+def display_word_features_pos_morph(word_features):
     df = pd.DataFrame()
     output_feature_values_set={}
 
@@ -421,12 +412,12 @@ def display_word_features(word_features):
         # Populating the DataFrame with feature values
         feature_keys=['pos','']
         for feature_key in feature_keys:
-            feature_values = [feature_key]
+            feature_values_pos_morph = [feature_key]
             for _, features in output:
-                feature_values.append(features.get(feature_key, ""))
+                feature_values_pos_morph.append(features.get(feature_key, ""))
             
             # df_key=feature_key if feature_key == 'pos' else 'morph'
-            df.loc[feature_key] = feature_values
+            df.loc[feature_key] = feature_values_pos_morph
         
         # print(df.columns)
 
@@ -442,35 +433,13 @@ def display_word_features(word_features):
         print("An error occurred:", e)
         traceback.print_exc()
     # Displaying the DataFrame
-    
-    
-
-def generate_single_badge(content,color=None):
-    if color == None:
-        color=get_badge_color(randint(0,100))
-    text_color = "#ffffff" if is_dark_color(color) else "#000000"  # Adjust text color based on background
-    return (
-        f'<span style="background-color: {color}; color: {text_color}; '
-        f'padding: 5px; margin-right: 5px; border-radius: 5px;">{content}</span>'
-    )
-
-def generate_badges(features):
-    badges = ""
-    
-    for feature, value in features.items():
-        badges+=generate_single_badge(f'{feature}: {value}')
-        
-    return badges
-
-def is_dark_color(color):
-    r, g, b = tuple(int(color[i:i + 2], 16) for i in (1, 3, 5))
-    brightness = (r * 299 + g * 587 + b * 114) / 1000
-    return brightness < 128
 
 
 
 
-inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
+# inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
+# inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
+inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 # print(inference_checkpoint_path)
 
 # input()
@@ -482,45 +451,11 @@ inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
 
 st.title("Gujarati POS Tagging & Morph Analyzer")
 
-# Your main app content goes here
-
-
-# st.markdown(
-#         """
-#         <style>
-            
-#             .footer {
-#                 bottom:0
-#                 background-color: #f8f9fa;
-#                 padding: 20px 0;
-#                 color: #495057;
-#                 text-align: center;
-#                 border-top: 1px solid #dee2e6;
-#             }
-#             .footer a {
-#                 color: #007bff;
-#                 text-decoration: none;
-#             }
-#             .footer a:hover {
-#                 color: #0056b3;
-#                 text-decoration: underline;
-#             }
-#         </style>
-#         <div class="content">
-#             <!-- Your main app content goes here -->
-#         </div>
-#         <div class="footer">
-#             <h3 class="mb-0">NLP Gujarati POS Tagging & Morph Analyzer</h3>
-#         </div>
-#         """,
-#         unsafe_allow_html=True,
-#     )
-
 query = st.text_input("Enter the sentence in Gujarati here....")
 
 if st.button('Query'):
     word_features=inference_model_wrapper.infer(query)
-    display_word_features(word_features)
+    display_word_features_pos_morph(word_features)
     
 st.markdown(
         """
