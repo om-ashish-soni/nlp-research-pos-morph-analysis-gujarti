@@ -11,7 +11,7 @@ import pandas as pd
 import os
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
-from utility import refine
+from utility import take_input_query
 
 load_dotenv()
 
@@ -427,9 +427,8 @@ st.title(title_pos_morph)
 
 # Your main app content goes here
 
-query = st.text_input("Enter the sentence in Gujarati here....")
+query=take_input_query()
 
-query=refine(query)
 if st.button('Query'):
     word_features=inference_model_wrapper_for_morph.infer(query)
     display_word_features(word_features)
@@ -459,7 +458,7 @@ st.markdown(
             <!-- Your main app content goes here -->
         </div>
         <div class="footer">
-            <p class="mb-0">Research with ❤️ design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
+            <p class="mb-0">Research with 🔬 design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
         </div>
         """,
         unsafe_allow_html=True,

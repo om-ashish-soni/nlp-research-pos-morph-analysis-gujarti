@@ -11,7 +11,7 @@ from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 import pandas as pd
 import traceback
-from utility import refine
+from utility import take_input_query
 
 def main():
     st.set_page_config(
@@ -454,8 +454,7 @@ inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
 
 st.title("Gujarati POS Tagging & Morph Analyzer")
 
-query = st.text_input("Enter the sentence in Gujarati here....")
-query=refine(query)
+query=take_input_query()
 
 if st.button('Query'):
     word_features=inference_model_wrapper.infer(query)
@@ -486,7 +485,7 @@ st.markdown(
             <!-- Your main app content goes here -->
         </div>
         <div class="footer">
-            <p class="mb-0">Research with ❤️ design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
+            <p class="mb-0">Research with 🔬 design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
         </div>
         """,
         unsafe_allow_html=True,

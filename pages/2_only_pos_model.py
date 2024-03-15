@@ -11,7 +11,7 @@ import os
 import pandas as pd
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
-from utility import refine
+from utility import take_input_query
 
 load_dotenv()
 
@@ -174,7 +174,7 @@ class CustomTokenClassificationModel(nn.Module):
 
 class PosMorphAnalysisModelWrapper_for_pos:
 
-    def __init__(self, tokenizer, inference_checkpoint_path, feature_seq, feature_id2value, max_length,NA):
+    def __init__(self, tokenizer, inference_model, feature_seq, feature_id2value, max_length,NA):
         self.tokenizer = tokenizer
         # self.inference_model = inference_model
         self.feature_seq = feature_seq
@@ -182,7 +182,8 @@ class PosMorphAnalysisModelWrapper_for_pos:
         self.max_length = max_length
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.NA = NA
-        self.inference_model=torch.load(inference_checkpoint_path,map_location=self.device)
+        self.inference_model=inference_model
+        # self.inference_model=torch.load(inference_checkpoint_path,map_location=self.device)
         self.inference_model.eval()
         self.inference_model.to(self.device)
 
@@ -383,8 +384,9 @@ inference_checkpoint_path_for_pos='models/GUJ_ONLY_POS_ANAYLISIS-v6.0-model.pth'
 
 tokenizer = load_tokenizer()
 
+inference_model=load_inference_model(inference_checkpoint_path_for_pos)
 
-inference_model_wrapper_for_pos=PosMorphAnalysisModelWrapper_for_pos(tokenizer, inference_checkpoint_path_for_pos, feature_seq_for_pos, feature_id2value_for_pos, MAX_LENGTH,NA)
+inference_model_wrapper_for_pos=PosMorphAnalysisModelWrapper_for_pos(tokenizer, inference_model, feature_seq_for_pos, feature_id2value_for_pos, MAX_LENGTH,NA)
 
 title_pos_morph="Gujarati POS Tagging Analyzer"
 
@@ -392,8 +394,7 @@ title_pos_morph="Gujarati POS Tagging Analyzer"
 st.title(title_pos_morph)
 
 
-query = st.text_input("Enter the sentence in Gujarati here....")
-query=refine(query)
+query=take_input_query()
 
 if st.button('Query'):
     word_features=inference_model_wrapper_for_pos.infer(query)
@@ -424,7 +425,7 @@ st.markdown(
             <!-- Your main app content goes here -->
         </div>
         <div class="footer">
-            <p class="mb-0">Research with ❤️ design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
+            <p class="mb-0">Research with 🔬 design & training by Prof. Brijesh Bhatt, Prof. Jatayu Baxi, Om Ashishkumar Soni</p>
         </div>
         """,
         unsafe_allow_html=True,
