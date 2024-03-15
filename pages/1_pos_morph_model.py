@@ -11,6 +11,7 @@ from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
 import pandas as pd
 import traceback
+from utility import refine
 
 def main():
     st.set_page_config(
@@ -25,7 +26,9 @@ if __name__ == "__main__":
 NA='NA'
 MAX_LENGTH=120
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_checkpoint="l3cube-pune/gujarati-bert"
+
+# model_checkpoint="l3cube-pune/gujarati-bert"
+model_checkpoint="tokenizer/l3cube-pune_GUJARATI_BERT_TOKENIZER"
 
 
 all_feature_values={
@@ -340,13 +343,13 @@ def download_file_optimistic(repo_id,repo_file_name):
 
 @st.cache_resource
 def load_tokenizer():
-  print("loading tokenizer ...................")
+  print("loading tokenizer ...................",model_checkpoint)
   return AutoTokenizer.from_pretrained(model_checkpoint)
 
 
 @st.cache_resource
 def load_inference_model(inference_checkpoint_path):
-    print("loading inference model ...................")
+    print("loading inference model ...................",inference_checkpoint_path)
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
@@ -442,7 +445,7 @@ def display_word_features_pos_morph(word_features):
 inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 # print(inference_checkpoint_path)
 
-# input()
+
 tokenizer = load_tokenizer()
 inference_model=load_inference_model(inference_checkpoint_path)
 inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
@@ -452,6 +455,7 @@ inference_model_wrapper=load_inference_wrapper_model(tokenizer,inference_model)
 st.title("Gujarati POS Tagging & Morph Analyzer")
 
 query = st.text_input("Enter the sentence in Gujarati here....")
+query=refine(query)
 
 if st.button('Query'):
     word_features=inference_model_wrapper.infer(query)

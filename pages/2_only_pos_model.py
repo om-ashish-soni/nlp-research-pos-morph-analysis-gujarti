@@ -11,6 +11,8 @@ import os
 import pandas as pd
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
+from utility import refine
+
 load_dotenv()
 
 def main():
@@ -27,8 +29,9 @@ if __name__ == "__main__":
 NA='NA'
 MAX_LENGTH=120
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_checkpoint="l3cube-pune/gujarati-bert"
-# inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
+
+# model_checkpoint="l3cube-pune/gujarati-bert"
+model_checkpoint="tokenizer/l3cube-pune_GUJARATI_BERT_TOKENIZER"
 
 
 
@@ -286,12 +289,12 @@ def download_file(repo_id,repo_file_name):
 
 @st.cache_resource
 def load_tokenizer():
-  print("loading tokenizer......")
+  print("loading tokenizer......",model_checkpoint)
   return AutoTokenizer.from_pretrained(model_checkpoint)
 
 @st.cache_resource
 def load_inference_model(inference_checkpoint_path):
-    print("loading inference model......")
+    print("loading inference model......",inference_checkpoint_path)
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
@@ -375,8 +378,6 @@ def display_word_features(word_features):
     # Displaying the DataFrame
 
 
-# print(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
-# inference_checkpoint_path_for_pos=download_file(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
 inference_checkpoint_path_for_pos='models/GUJ_ONLY_POS_ANAYLISIS-v6.0-model.pth'
 # print(inference_checkpoint_path_for_pos)
 
@@ -390,42 +391,9 @@ title_pos_morph="Gujarati POS Tagging Analyzer"
 
 st.title(title_pos_morph)
 
-# Your main app content goes here
-
-
-
-# st.markdown(
-#         """
-#         <style>
-            
-#             .footer {
-#                 bottom:0
-#                 background-color: #f8f9fa;
-#                 padding: 20px 0;
-#                 color: #495057;
-#                 text-align: center;
-#                 border-top: 1px solid #dee2e6;
-#             }
-#             .footer a {
-#                 color: #007bff;
-#                 text-decoration: none;
-#             }
-#             .footer a:hover {
-#                 color: #0056b3;
-#                 text-decoration: underline;
-#             }
-#         </style>
-#         <div class="content">
-#             <!-- Your main app content goes here -->
-#         </div>
-#         <div class="footer">
-#             <h3 class="mb-0">NLP Gujarati POS Tagging & Morph Analyzer</h3>
-#         </div>
-#         """,
-#         unsafe_allow_html=True,
-#     )
 
 query = st.text_input("Enter the sentence in Gujarati here....")
+query=refine(query)
 
 if st.button('Query'):
     word_features=inference_model_wrapper_for_pos.infer(query)

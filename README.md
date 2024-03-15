@@ -10,6 +10,4 @@
 * pip install requirements.txt
 
 ### Step - 3 : Running Models
-1. POS & Morph Model : 
-2. Only POS Model : 
-3. Morph By POS Support Model : 
+1. Running all models : streamlit run home.py

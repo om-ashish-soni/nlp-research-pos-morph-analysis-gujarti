@@ -11,6 +11,8 @@ import pandas as pd
 import os
 from huggingface_hub import hf_hub_download
 from dotenv import load_dotenv
+from utility import refine
+
 load_dotenv()
 
 def main():
@@ -27,7 +29,8 @@ if __name__ == "__main__":
 NA='NA'
 MAX_LENGTH=120
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model_checkpoint="l3cube-pune/gujarati-bert"
+# model_checkpoint="l3cube-pune/gujarati-bert"
+model_checkpoint="tokenizer/l3cube-pune_GUJARATI_BERT_TOKENIZER"
 
 
 
@@ -206,14 +209,15 @@ class CustomTokenClassificationModel(nn.Module):
 
 class PosMorphAnalysisModelWrapper_for_morph:
 
-    def __init__(self, tokenizer, inference_checkpoint_path, feature_seq, feature_id2value, max_length,NA):
+    def __init__(self, tokenizer, inference_model, feature_seq, feature_id2value, max_length,NA):
         self.tokenizer = tokenizer
         self.feature_seq = feature_seq
         self.feature_id2value = feature_id2value
         self.max_length = max_length
         self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.NA = NA
-        self.inference_model=torch.load(inference_checkpoint_path,map_location=self.device)
+        self.inference_model = inference_model
+        # self.inference_model=torch.load(inference_checkpoint_path,map_location=self.device)
         self.inference_model.eval()
         self.inference_model.to(self.device)
 
@@ -321,13 +325,12 @@ def download_file(repo_id,repo_file_name):
 
 @st.cache_resource
 def load_tokenizer():
-  print("loading tokenizer......")
+  print("loading tokenizer......",model_checkpoint)
   return AutoTokenizer.from_pretrained(model_checkpoint)
 
 @st.cache_resource
 def load_inference_model(inference_checkpoint_path):
-    st.write("loading inference model......")
-    print(inference_checkpoint_path)
+    print("loading inference model......",inference_checkpoint_path)
     inference_model=torch.load(inference_checkpoint_path,map_location=device)
     inference_model.eval()
     inference_model.to(device)
@@ -411,12 +414,11 @@ def display_word_features(word_features):
     # Displaying the DataFrame
 
 
-# inference_checkpoint_path_for_morph=download_file(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
 inference_checkpoint_path_for_morph='models/GUJ_ONLY_MORPH_BY_POS_SUPPORT_ANAYLISIS-v7.1-model.pth'
 
 tokenizer = load_tokenizer()
-
-inference_model_wrapper_for_morph=PosMorphAnalysisModelWrapper_for_morph(tokenizer, inference_checkpoint_path_for_morph, feature_seq_for_morph, feature_id2value_for_morph, MAX_LENGTH,NA)
+inference_model=load_inference_model(inference_checkpoint_path_for_morph)
+inference_model_wrapper_for_morph=PosMorphAnalysisModelWrapper_for_morph(tokenizer, inference_model, feature_seq_for_morph, feature_id2value_for_morph, MAX_LENGTH,NA)
 
 
 title_pos_morph="Gujarati Morph Analyzer By POS Support"
@@ -427,6 +429,7 @@ st.title(title_pos_morph)
 
 query = st.text_input("Enter the sentence in Gujarati here....")
 
+query=refine(query)
 if st.button('Query'):
     word_features=inference_model_wrapper_for_morph.infer(query)
     display_word_features(word_features)
