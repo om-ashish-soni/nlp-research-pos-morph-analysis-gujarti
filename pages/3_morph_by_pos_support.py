@@ -416,6 +416,11 @@ def display_word_features(word_features):
 
 inference_checkpoint_path_for_morph='models/GUJ_ONLY_MORPH_BY_POS_SUPPORT_ANAYLISIS-v7.1-model.pth'
 
+if os.getenv('STAGE') == 'DEPLOY':
+    print("downloading file")
+    print(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
+    inference_checkpoint_path_for_morph=download_file(os.getenv('REPO_ID_FOR_MORPH'),os.getenv('REPO_FILE_NAME_FOR_MORPH'))
+
 tokenizer = load_tokenizer()
 inference_model=load_inference_model(inference_checkpoint_path_for_morph)
 inference_model_wrapper_for_morph=PosMorphAnalysisModelWrapper_for_morph(tokenizer, inference_model, feature_seq_for_morph, feature_id2value_for_morph, MAX_LENGTH,NA)

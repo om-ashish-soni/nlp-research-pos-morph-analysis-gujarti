@@ -380,7 +380,11 @@ def display_word_features(word_features):
 
 
 inference_checkpoint_path_for_pos='models/GUJ_ONLY_POS_ANAYLISIS-v6.0-model.pth'
-# print(inference_checkpoint_path_for_pos)
+if os.getenv('STAGE') == 'DEPLOY':
+    print("downloading file")
+    print(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
+    inference_checkpoint_path_for_pos=download_file(os.getenv('REPO_ID_FOR_POS'),os.getenv('REPO_FILE_NAME_FOR_POS'))
+
 
 tokenizer = load_tokenizer()
 

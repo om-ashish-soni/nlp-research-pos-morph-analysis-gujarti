@@ -1,9 +1,8 @@
+.env
 myenv
 models
 nlp_research
 __pycache__
 .devcontainer
 .venv
-.myenv
-.env
 coverage

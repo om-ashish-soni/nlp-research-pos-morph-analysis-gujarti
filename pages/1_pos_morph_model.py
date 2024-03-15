@@ -13,6 +13,7 @@ import pandas as pd
 import traceback
 from utility import take_input_query
 
+load_dotenv()
 def main():
     st.set_page_config(
         page_title="NLP Gujarati POS Tagging & Morph Analyzer",
@@ -440,10 +441,14 @@ def display_word_features_pos_morph(word_features):
 
 
 
-# inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
+
 # inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
-# print(inference_checkpoint_path)
+
+if os.getenv('STAGE') == 'DEPLOY':
+    print("downloading file")
+    inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
+
 
 
 tokenizer = load_tokenizer()
