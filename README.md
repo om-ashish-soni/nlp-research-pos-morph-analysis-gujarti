@@ -7,7 +7,7 @@
 * Clone This repository
 
 ### Step - 2 : Installing Dependencies
-* pip install requirements.txt
+* pip install -r requirements.txt
 
 ### Step - 3 : Running Models
 1. Running all models : streamlit run home.py
