@@ -23,8 +23,8 @@ st.markdown(
 )
 st.subheader("Models Available:")
 st.markdown("- GUJ POS MORPH: Model for predicting POS and morphological features.")
-st.markdown("- GUJ MORPH BY POS SUPPORT : Model for predicting morphological features with POS support.")
-st.markdown("- GUJ ONLY POS: Model for predicting only POS of Gujarati words.")
+# st.markdown("- GUJ MORPH BY POS SUPPORT : Model for predicting morphological features with POS support.")
+# st.markdown("- GUJ ONLY POS: Model for predicting only POS of Gujarati words.")
 
 st.markdown("#### Research 🔬 Design & Training by : ")
 st.markdown("* Prof. Brijesh Bhatt")
