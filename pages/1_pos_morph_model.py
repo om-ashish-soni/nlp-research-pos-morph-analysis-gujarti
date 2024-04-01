@@ -440,9 +440,9 @@ def display_word_features_pos_morph(word_features):
 
 
 
-# inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
+inference_checkpoint_path=download_file_optimistic("om-ashish-soni/research-pos-morph-gujarati-6.0","HfApiUploaded_GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth")
 # inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
-inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
+# inference_checkpoint_path='models/GUJ_SPLIT_POS_MORPH_ANAYLISIS-v6.0-model.pth'
 # print(inference_checkpoint_path)
 
 
